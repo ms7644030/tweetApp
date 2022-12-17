@@ -1,0 +1,265 @@
+package com.tweetApp.tweetApp.controller;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity.BodyBuilder;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.tweetApp.tweetApp.authentication.JwtTokenUtil;
+import com.tweetApp.tweetApp.entities.ProfileImage;
+import com.tweetApp.tweetApp.entities.Tweets;
+import com.tweetApp.tweetApp.entities.Users;
+import com.tweetApp.tweetApp.exceptions.InvalidUsernameException;
+import com.tweetApp.tweetApp.exceptions.TweetDoesNotExistException;
+import com.tweetApp.tweetApp.model.Reply;
+import com.tweetApp.tweetApp.model.TweetUpdate;
+import com.tweetApp.tweetApp.service.TweetsService;
+import com.tweetApp.tweetApp.service.UsersService;
+
+@CrossOrigin(origins = "*")
+@RestController
+@RequestMapping("/api/v1.0/tweets")
+public class TweetController {
+
+	public static final String USER_NAME_NOT_FOUND = "User name not found";
+	public static final String GIVEN_TWEET_ID_CANNOT_BE_FOUND = "\"Given tweetId cannot be found\"";
+	@Autowired
+	private TweetsService tweetService;
+
+	@Autowired
+	private UsersService usersService;
+
+//	@Autowired
+//	private Producer kafkaProducer;
+
+	UserDetails loginCredentials;
+
+	private final JwtTokenUtil jwtTokenUtil = new JwtTokenUtil();
+
+	@PostMapping("/{userName}/add")
+	public ResponseEntity<?> postNewTweet(@PathVariable String userName, @RequestBody String tweetText,
+			@RequestHeader String Authorization)
+			throws ExecutionException, JsonProcessingException, InterruptedException {
+		Users user = getUserDetails(userName);
+
+		if (user == null) {
+			return new ResponseEntity<>(USER_NAME_NOT_FOUND, HttpStatus.BAD_REQUEST);
+		}
+		if (Authorization != null && jwtTokenUtil.validateToken(Authorization, loginCredentials)) {
+			tweetService.postNewTweet(userName, tweetText);
+			// kafkaProducer.sendMessage(tweets);
+			return new ResponseEntity<>("\"Tweet created\"", HttpStatus.CREATED);
+		}
+		return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+	}
+
+	@GetMapping("/all")
+	public ResponseEntity<?> getAllTweets() {
+		return new ResponseEntity<>(tweetService.getAllTweets(), HttpStatus.OK);
+	}
+
+	@GetMapping("/{userName}")
+	public ResponseEntity<?> getUserTweets(@PathVariable String userName) throws InvalidUsernameException {
+		Users user = usersService.getByUserName(userName);
+		if (user == null) {
+			return new ResponseEntity<>(USER_NAME_NOT_FOUND, HttpStatus.NOT_FOUND);
+		}
+		return new ResponseEntity<>(tweetService.getUserTweets(userName), HttpStatus.OK);
+
+	}
+
+	@GetMapping("/byTweetId/{tweetId}")
+	public ResponseEntity<?> getUserTweetsByTweetId(@PathVariable String tweetId) throws InvalidUsernameException {
+		return new ResponseEntity<>(tweetService.getUserTweetsByTweetId(tweetId), HttpStatus.OK);
+	}
+
+	@PutMapping("/{userName}/update/{tweetId}")
+	public ResponseEntity<?> updateTweet(@PathVariable String userName, @PathVariable String tweetId,
+			@RequestBody TweetUpdate tweetUpdate) {
+		Users user = getUserDetails(userName);
+		if (user == null) {
+			return new ResponseEntity<>(USER_NAME_NOT_FOUND, HttpStatus.NOT_FOUND);
+		}
+		try {
+
+			return new ResponseEntity<>(tweetService.updateTweet(userName, tweetId, tweetUpdate.getTweetText()),
+					HttpStatus.OK);
+		} catch (TweetDoesNotExistException e) {
+			return new ResponseEntity<>("Given tweetId cannot be found", HttpStatus.NOT_FOUND);
+		}
+	}
+
+	@DeleteMapping("/{userName}/delete/{tweetId}")
+	public ResponseEntity<?> deleteTweet(@PathVariable String userName, @PathVariable String tweetId,
+			@RequestHeader String Authorization) {
+		Users user = getUserDetails(userName);
+
+		if (user == null) {
+			return new ResponseEntity<>("User name not found", HttpStatus.NOT_FOUND);
+		}
+
+		try {
+			if (Authorization != null && jwtTokenUtil.validateToken(Authorization, loginCredentials)) {
+				tweetService.deleteTweet(userName, tweetId);
+				return new ResponseEntity<>("\"Tweet deleted successfully\"", HttpStatus.OK);
+			}
+			return new ResponseEntity<>("\"Unauthorized\"", HttpStatus.UNAUTHORIZED);
+		} catch (TweetDoesNotExistException e) {
+			return new ResponseEntity<>(GIVEN_TWEET_ID_CANNOT_BE_FOUND, HttpStatus.NOT_FOUND);
+		}
+	}
+
+	@PutMapping("/{userName}/like/{tweetId}")
+	public ResponseEntity<?> likeATweet(@PathVariable String userName, @PathVariable String tweetId,
+			@RequestHeader String Authorization) {
+
+		Users user = getUserDetails(userName);
+		if (user == null) {
+			return new ResponseEntity<>(USER_NAME_NOT_FOUND, HttpStatus.NOT_FOUND);
+		}
+
+		try {
+			if (Authorization != null && jwtTokenUtil.validateToken(Authorization, loginCredentials)) {
+				if (!tweetService.checkLikedOrNot(userName, tweetId)) {
+					tweetService.likeTweet(userName, tweetId);
+					return new ResponseEntity<>("\" liked tweet \"", HttpStatus.OK);
+				} else {
+					tweetService.disLikeTweet(userName, tweetId);
+					return new ResponseEntity<>("\"Disliked tweet\"", HttpStatus.OK);
+				}
+			}
+			return new ResponseEntity<>("\"Unauthorized\"", HttpStatus.UNAUTHORIZED);
+		} catch (TweetDoesNotExistException e) {
+			return new ResponseEntity<>(GIVEN_TWEET_ID_CANNOT_BE_FOUND, HttpStatus.NOT_FOUND);
+		}
+	}
+
+	@PostMapping("/{userName}/reply/{tweetId}")
+	public ResponseEntity<?> replyToTweet(@PathVariable String userName, @PathVariable String tweetId,
+			@RequestBody Reply tweetReply, @RequestHeader String Authorization) {
+		Users user = getUserDetails(userName);
+		if (user == null) {
+			return new ResponseEntity<>(USER_NAME_NOT_FOUND, HttpStatus.NOT_FOUND);
+		}
+		try {
+			if (Authorization != null && jwtTokenUtil.validateToken(Authorization, loginCredentials)) {
+				tweetService.replyTweet(userName, tweetId, tweetReply.getComment());
+				return new ResponseEntity<>("\"Replied\"", HttpStatus.OK);
+			}
+			return new ResponseEntity<>("\"Unauthorized\"", HttpStatus.UNAUTHORIZED);
+		} catch (TweetDoesNotExistException e) {
+			return new ResponseEntity<>(GIVEN_TWEET_ID_CANNOT_BE_FOUND, HttpStatus.NOT_FOUND);
+		}
+	}
+
+	@GetMapping("/getLike/{tweetId}")
+	public ResponseEntity<?> getLikes(@PathVariable String tweetId) {
+		List<Tweets> tweet = tweetService.findByTweetId(tweetId);
+		if (tweet == null) {
+			return new ResponseEntity<>("\"Tweet id not found\"", HttpStatus.NOT_FOUND);
+		}
+		return new ResponseEntity<>(tweetService.findByTweetId(tweetId), HttpStatus.OK);
+	}
+
+	public Users getUserDetails(String userName) {
+		Users user = usersService.getByUserName(userName);
+		loginCredentials = new UserDetails() {
+			@Override
+			public Collection<? extends GrantedAuthority> getAuthorities() {
+				return null;
+			}
+
+			@Override
+			public String getPassword() {
+				return user.getPassword();
+			}
+
+			@Override
+			public String getUsername() {
+				return user.getLoginId();
+			}
+
+			@Override
+			public boolean isAccountNonExpired() {
+				return false;
+			}
+
+			@Override
+			public boolean isAccountNonLocked() {
+				return false;
+			}
+
+			@Override
+			public boolean isCredentialsNonExpired() {
+				return false;
+			}
+
+			@Override
+			public boolean isEnabled() {
+				return false;
+			}
+		};
+		return user;
+	}
+//	@PostMapping("/upload/{username}")
+//	public BodyBuilder uploadImage(@PathVariable String username,@RequestParam("file") MultipartFile file) throws IOException {
+//		System.out.println("Original Image Byte Size - " + file.getBytes().length);
+//		ProfileImage img = new ProfileImage(file.getOriginalFilename(), file.getContentType(),
+//				compressBytes(file.getBytes()));
+//		
+//		try {
+//			usersService.upload(username, img);
+//		} catch (InvalidUsernameException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return (BodyBuilder) ResponseEntity.status(HttpStatus.OK);
+//	}
+	
+	// compress the image bytes before storing it in the database
+	public static byte[] compressBytes(byte[] data) {
+		Deflater deflater = new Deflater();
+		deflater.setInput(data);
+		deflater.finish();
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
+		byte[] buffer = new byte[1024];
+		while (!deflater.finished()) {
+			int count = deflater.deflate(buffer);
+			outputStream.write(buffer, 0, count);
+		}
+		try {
+			outputStream.close();
+		} catch (IOException e) {
+		}
+		System.out.println("Compressed Image Byte Size - " + outputStream.toByteArray().length);
+		return outputStream.toByteArray();
+	}
+	// uncompress the image bytes before returning it to the angular application
+	
+}
+
