@@ -4,15 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity.BodyBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,18 +21,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tweetApp.tweetApp.authentication.JwtTokenUtil;
-import com.tweetApp.tweetApp.entities.ProfileImage;
 import com.tweetApp.tweetApp.entities.Tweets;
 import com.tweetApp.tweetApp.entities.Users;
 import com.tweetApp.tweetApp.exceptions.InvalidUsernameException;
 import com.tweetApp.tweetApp.exceptions.TweetDoesNotExistException;
-import com.tweetApp.tweetApp.model.Reply;
+import com.tweetApp.tweetApp.model.Comment;
 import com.tweetApp.tweetApp.model.TweetUpdate;
 import com.tweetApp.tweetApp.service.TweetsService;
 import com.tweetApp.tweetApp.service.UsersService;
@@ -161,7 +154,7 @@ public class TweetController {
 
 	@PostMapping("/{userName}/reply/{tweetId}")
 	public ResponseEntity<?> replyToTweet(@PathVariable String userName, @PathVariable String tweetId,
-			@RequestBody Reply tweetReply, @RequestHeader String Authorization) {
+			@RequestBody Comment tweetReply, @RequestHeader String Authorization) {
 		Users user = getUserDetails(userName);
 		if (user == null) {
 			return new ResponseEntity<>(USER_NAME_NOT_FOUND, HttpStatus.NOT_FOUND);

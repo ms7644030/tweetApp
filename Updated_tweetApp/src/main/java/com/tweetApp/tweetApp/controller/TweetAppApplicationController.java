@@ -54,9 +54,9 @@ public class TweetAppApplicationController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerNewUser(@RequestBody Users users) {
-        if(!usersService.checkEmailAndLoginId(users)){
-            return new ResponseEntity<>("Email Id and Login Id must be same.", HttpStatus.BAD_REQUEST);
-        }
+//        if(!usersService.checkEmailAndLoginId(users)){
+//            return new ResponseEntity<>("Email Id and Login Id must be same.", HttpStatus.BAD_REQUEST);
+//        }
         if(!usersService.checkExistOrNot(users)){
 
             return new ResponseEntity<>(usersService.storeUserDetails(users), HttpStatus.CREATED);

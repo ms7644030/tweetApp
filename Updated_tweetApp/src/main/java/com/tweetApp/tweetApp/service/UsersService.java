@@ -67,19 +67,11 @@ public class UsersService {
 		return false;
 	}
 
-	public List<UserModel> getAllUsers() {
+	public List<String> getAllUsers() {
 		List<Users> users = usersRepository.findAll();
-		List<UserModel> result = new ArrayList<>();
+		List<String> result = new ArrayList<>();
 		for (Users u : users) {
-			UserModel us = new UserModel();
-			us.setId(u.getId());
-			us.setContactNo(u.getContactNo());
-			us.setEmailId(u.getEmailId());
-			us.setFirstName(u.getFirstName());
-			us.setLastName(u.getLastName());
-			us.setImageurl(u.getImageurl());
-			us.setLoginId(u.getLoginId());
-			result.add(us);
+			result.add(u.getLoginId());
 		}
 		return result;
 	}

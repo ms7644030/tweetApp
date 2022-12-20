@@ -17,9 +17,10 @@ import lombok.Setter;
 public class Comment {
 
     private String username;
+    private String timestamp;
     private String comment;
 //    @Embedded
 //    private ProfileImage profileImage;
-   private String imageurl;
+   
 }
 

@@ -30,7 +30,7 @@ import lombok.Setter;
 public class Tweets {
     @Id
     private String tweetId;
-    @Column(name = "username",insertable = false ,updatable= false)
+    @Column(name = "username")
     private String username;
     private String tweetText;
     private String firstName;
@@ -43,6 +43,6 @@ public class Tweets {
     private List<String> likes = new ArrayList<>();
    @Embedded
    @ElementCollection(targetClass=Comment.class)
-   private List<Comment> comments = new ArrayList<>();
+   private List<Comment> replies = new ArrayList<>();
 
 }

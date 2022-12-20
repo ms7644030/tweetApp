@@ -40,10 +40,10 @@ public class TweetsService {
 			List<Tweets> tweets = tweetRepository.findByUsername(username);
 			return tweets.stream().map(tweet -> {
 				Integer likesCount = tweet.getLikes().size();
-				Integer commentsCount = tweet.getComments().size();
+				Integer commentsCount = tweet.getReplies().size();
 				return new TweetResponse(tweet.getTweetId(), username, tweet.getTweetText(), tweet.getFirstName(),
 						tweet.getLastName(), tweet.getTweetDate(), likesCount, commentsCount, tweet.getImageurl(),
-						tweet.getComments());
+						tweet.getReplies());
 			}).collect(Collectors.toList());
 		} else {
 			throw new InvalidUsernameException("Username/loginId provided is invalid");
@@ -58,10 +58,10 @@ public class TweetsService {
 			List<Tweets> tweets = tweetRepository.findByTweetId(tweetId);
 			return tweets.stream().map(tweet -> {
 				Integer likesCount = tweet.getLikes().size();
-				Integer commentsCount = tweet.getComments().size();
+				Integer commentsCount = tweet.getReplies().size();
 				return new TweetResponse(tweet.getTweetId(), tweet.getUsername(), tweet.getTweetText(),
 						tweet.getFirstName(), tweet.getLastName(), tweet.getTweetDate(), likesCount, commentsCount,
-						tweet.getImageurl(), tweet.getComments());// , tweet.getComments());
+						tweet.getImageurl(), tweet.getReplies());// , tweet.getComments());
 			}).collect(Collectors.toList());
 		} else {
 			throw new InvalidUsernameException("Username/loginId provided is invalid");
@@ -80,7 +80,7 @@ public class TweetsService {
 		Users user = usersRepository.findByLoginId(username);
 		newTweet.setFirstName(user.getFirstName());
 		newTweet.setLastName(user.getLastName());
-		newTweet.setUsername(username);
+		newTweet.setUsername(user.getLoginId());
 		newTweet.setImageurl(user.getImageurl());
 		newTweet.setTweetText(tweetText);
 		tweetRepository.save(newTweet);
@@ -150,16 +150,19 @@ public class TweetsService {
 		if (tweetOptional.isPresent()) {
 			Tweets tweet = tweetOptional.get();
 
-			List<Comment> c = tweet.getComments();
-			Comment s = new Comment(username, tweetReply, user.getImageurl());
+			List<Comment> c = tweet.getReplies();
+			LocalDateTime myDateObj = LocalDateTime.now();
+			DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm");
+			String formattedDate = myDateObj.format(myFormatObj);
+			Comment s = new Comment(username, formattedDate,tweetReply);
 			if (c != null) {
 
 				c.add(s);
-				tweet.setComments(c);
+				tweet.setReplies(c);
 			} else {
 				List<Comment> cs = new ArrayList<>();
 				cs.add(s);
-				tweet.setComments(cs);
+				tweet.setReplies(cs);
 			}
 
 			tweetRepository.save(tweet);
