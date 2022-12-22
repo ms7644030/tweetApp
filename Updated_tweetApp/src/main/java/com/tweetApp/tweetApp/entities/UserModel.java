@@ -1,8 +1,7 @@
 package com.tweetApp.tweetApp.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
 import javax.persistence.Id;
+
 import org.springframework.stereotype.Component;
 
 import lombok.AllArgsConstructor;

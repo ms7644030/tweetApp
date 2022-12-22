@@ -49,8 +49,6 @@ public class TweetsService {
 			throw new InvalidUsernameException("Username/loginId provided is invalid");
 		}
 
-		//// ,commentsCount, tweet.getComments());
-
 	}
 
 	public List<TweetResponse> getUserTweetsByTweetId(String tweetId) throws InvalidUsernameException {
@@ -154,7 +152,7 @@ public class TweetsService {
 			LocalDateTime myDateObj = LocalDateTime.now();
 			DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm");
 			String formattedDate = myDateObj.format(myFormatObj);
-			Comment s = new Comment(username, formattedDate,tweetReply);
+			Comment s = new Comment(username, formattedDate, tweetReply);
 			if (c != null) {
 
 				c.add(s);

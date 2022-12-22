@@ -1,0 +1,10 @@
+version: 1.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "arn:aws:ecs:us-west-2:555918697305:task-definition/process-pension-service-task:6"
+        LoadBalancerInfo:
+          ContainerName: "tweetApp"
+          ContainerPort: "8081"
+        PlatformVersion: "LATEST"

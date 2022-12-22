@@ -10,21 +10,15 @@ import java.util.zip.Inflater;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.tweetApp.tweetApp.entities.ProfileImage;
 import com.tweetApp.tweetApp.entities.UserModel;
 import com.tweetApp.tweetApp.entities.Users;
-import com.tweetApp.tweetApp.exceptions.InvalidUsernameException;
 import com.tweetApp.tweetApp.repository.UsersRepository;
 
 @Service
 public class UsersService {
-	public static final String STORE_AVATAR_PROFILE = "http://tweetapp-env.eba-ih3pr6wj.us-east-1.elasticbeanstalk.com/api/v1.0/tweets/avatar/";
 
 	@Autowired
 	private UsersRepository usersRepository;
-
-	// @Autowired
-	// private TweetRepository tweetsRepository;
 
 	public Users storeUserDetails(Users user) {
 		usersRepository.save(user);
@@ -78,8 +72,7 @@ public class UsersService {
 
 	public Users getByUserName(String userName) {
 		return usersRepository.findByLoginId(userName);
-	
-		
+
 	}
 
 	public UserModel getDetailsOfUser(String userName) {
@@ -94,15 +87,7 @@ public class UsersService {
 		us.setLoginId(u.getLoginId());
 		return us;
 	}
-//	public void upload(String username) throws InvalidUsernameException {
-//		Users u = usersRepository.findByLoginId(username);
-//		if (u!= null) {
-//			u.setProfileImage(img);
-//			usersRepository.save(u);
-//		} else {
-//			throw new InvalidUsernameException("USER_DOES_NOT_EXIST");
-//		}
-//	}
+
 	public static byte[] decompressBytes(byte[] data) {
 		Inflater inflater = new Inflater();
 		inflater.setInput(data);

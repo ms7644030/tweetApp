@@ -1,8 +1,6 @@
 package com.tweetApp.tweetApp.entities;
 
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -11,8 +9,6 @@ import javax.persistence.Table;
 import org.hibernate.annotations.GenericGenerator;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
-
-import com.tweetApp.tweetApp.model.Comment;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
