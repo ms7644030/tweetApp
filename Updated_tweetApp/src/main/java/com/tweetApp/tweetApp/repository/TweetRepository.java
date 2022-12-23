@@ -13,6 +13,9 @@ public interface TweetRepository extends JpaRepository<Tweets, String> {
 
 	List<Tweets> findByUsername(String username);
 
+	@Query(value = "SELECT t FROM Tweets t order by t.tweetDate desc ")
+	List<Tweets> findAll();
+
 	@Query(value = "SELECT t FROM Tweets t WHERE t.username=?1 ")
 	Tweets findByTweetUsername(String username);
 
