@@ -1,11 +1,8 @@
 package com.tweetApp.tweetApp.controller;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.zip.Deflater;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,6 +28,7 @@ import com.tweetApp.tweetApp.exceptions.InvalidUsernameException;
 import com.tweetApp.tweetApp.exceptions.TweetDoesNotExistException;
 import com.tweetApp.tweetApp.model.Comment;
 import com.tweetApp.tweetApp.model.TweetUpdate;
+import com.tweetApp.tweetApp.service.KafkaProducer;
 import com.tweetApp.tweetApp.service.TweetsService;
 import com.tweetApp.tweetApp.service.UsersService;
 
@@ -47,8 +45,8 @@ public class TweetController {
 	@Autowired
 	private UsersService usersService;
 
-//	@Autowired
-//	private Producer kafkaProducer;
+	@Autowired
+	private KafkaProducer kafkaProducer;
 
 	UserDetails loginCredentials;
 
@@ -65,7 +63,7 @@ public class TweetController {
 		}
 		if (Authorization != null && jwtTokenUtil.validateToken(Authorization, loginCredentials)) {
 			tweetService.postNewTweet(userName, tweetText);
-			// kafkaProducer.sendMessage(tweets);
+			kafkaProducer.sendMessage(tweetText);
 			return new ResponseEntity<>("\"Tweet created\"", HttpStatus.CREATED);
 		}
 		return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
@@ -219,40 +217,5 @@ public class TweetController {
 		};
 		return user;
 	}
-//	@PostMapping("/upload/{username}")
-//	public BodyBuilder uploadImage(@PathVariable String username,@RequestParam("file") MultipartFile file) throws IOException {
-//		System.out.println("Original Image Byte Size - " + file.getBytes().length);
-//		ProfileImage img = new ProfileImage(file.getOriginalFilename(), file.getContentType(),
-//				compressBytes(file.getBytes()));
-//		
-//		try {
-//			usersService.upload(username, img);
-//		} catch (InvalidUsernameException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		return (BodyBuilder) ResponseEntity.status(HttpStatus.OK);
-//	}
-	
-	// compress the image bytes before storing it in the database
-	public static byte[] compressBytes(byte[] data) {
-		Deflater deflater = new Deflater();
-		deflater.setInput(data);
-		deflater.finish();
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-		byte[] buffer = new byte[1024];
-		while (!deflater.finished()) {
-			int count = deflater.deflate(buffer);
-			outputStream.write(buffer, 0, count);
-		}
-		try {
-			outputStream.close();
-		} catch (IOException e) {
-		}
-		System.out.println("Compressed Image Byte Size - " + outputStream.toByteArray().length);
-		return outputStream.toByteArray();
-	}
-	// uncompress the image bytes before returning it to the angular application
-	
-}
 
+}
